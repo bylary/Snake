@@ -26,6 +26,11 @@ void ncurses_config() {
 	// podczas wpisywania z klawiatury nie powinna siÄ drukowaÄ literka
 	noecho();
 }
+struct Coord {
+	int x,y;
+	Coord(int a,int b):x(x),y(y) {
+	}
+};
 class MainWindow {
 	private:
 		int wXR;
@@ -51,8 +56,13 @@ class MainWindow {
 			init_pair(1, COLOR_GREEN, COLOR_BLACK);
 		}
 
-		void print() {
+		void addScore() {
+			score +=1;
+		}
+		void print_board(std::vector<Coord> position, int character, int length, int appleSkin, Coord apple) {
 			mainwin = newwin(wYB,wXR,wYU,wXL);
+			int apple_y = apple.y;
+			int apple_x = apple.x;
 
 
 			for(int h=0; h<wYB-1; h++) {
@@ -73,21 +83,6 @@ class MainWindow {
 			mvwprintw(mainwin, 0, 1,"SNAKE");
 			mvwprintw(mainwin, 0, 7,"SCORE:");
 			mvwprintw(mainwin, 0, 13, pchar);
-
-
-		}
-		void addScore() {
-			score +=1;
-		}
-//		void ncurses_init_colors() {
-//			// wiÄcej o kolorach tu https://www.linuxjournal.com/content/programming-color-ncurses
-//
-//			// musimy ustawiÄ jeĹli bÄdziemy uĹźywaÄ kolorowania konsoli
-//			start_color();
-//			// i zdefiniowaÄ pary kolorĂłw ktĂłre bÄdziemy uĹźywaÄ
-//			init_pair(1, COLOR_GREEN, COLOR_BLACK);
-//		}
-		void print_board(std::vector<int> position_y, std::vector<int> position_x, int character, int length, int apple, int apple_x, int apple_y) {
 			// operujemy na wirtualnym ekranie bÄdÄcym buforem ekranu
 			// a nastÄpnie wyĹwietlamy bufor w terminalu funkcjÄ refresh
 
@@ -99,10 +94,10 @@ class MainWindow {
 			//addch(character); // drukujemy podany znak
 //	movew(mainwin,apple_y,apple_x);
 //	addch(apple);
-			mvwaddch(mainwin,apple_y,apple_x, apple);
+			mvwaddch(mainwin,apple_y,apple_x, appleSkin);
 			for(int i=0; i < length; i++) {
 				//move(position_y[i],position_x[i]);
-				mvwaddch(mainwin,position_y[i],position_x[i],character);
+				mvwaddch(mainwin,position[i].y,position[i].x,character);
 				//move(position_y[i],position_x[i]+1);
 				//addch(character);
 			}
@@ -113,18 +108,26 @@ class MainWindow {
 			//refresh(); // wyĹwietlamy zawartoĹÄ wirtualnego ekranu dopiero po refresh
 		}
 };
+//struct Coord {
+//	int x,y;
+//	Coord(int a,int b):x(x),y(y) {
+//	}
+//};
 class Snake {
-	struct Cord{
-		int x,y;
-		Cord(int x,int y):x(x),y(y){
-		}
-	};
+//		struct Coord {
+//			int x,y;
+//			Coord(int x,int y):x(x),y(y) {
+//			}
+//		};
 	private:
-		std::vector<Cord> snake;
+		std::vector<Coord> snake;
 
 	public:
+		Snake(Coord vektor){
+			snake[0] = vektor;
+		}
 		void push(int x, int y) {
-			snake.push_back(new Cord(x,y));
+			snake.push_back(Coord(x,y));
 
 		}
 		void moveVector() {
@@ -133,40 +136,22 @@ class Snake {
 			for(int i = 0; i < length-1; i++ ) {
 				snake[length-i] = tempSnake[length-i-1];
 			}
-			delete tempSnake;
+			//delete tempSnake;
 		}
-		void moveHead(Cord C){
+		void moveHead(Coord C) {
 //			delete
 			snake[0] = C;
-	
+
 		}
-		
+		int size(){
+			return snake.size();			
+		}
+		std::vector<Coord> vektors(){
+			return snake;
+		}
+
 };
-//void print_board(std::vector<int> position_y, std::vector<int> position_x, int character, int length, int apple, int apple_x, int apple_y) {
-//	// operujemy na wirtualnym ekranie bÄdÄcym buforem ekranu
-//	// a nastÄpnie wyĹwietlamy bufor w terminalu funkcjÄ refresh
-//
-//	//clear(); // czyĹci wirtualny ekran (lepiej byĹo by czyĹciÄ jeden znak albo jedna linie)
-//
-//	attron(COLOR_PAIR(1)); // ustawiamy wczeĹniej zdefiniowanÄ perÄ kolorĂłw
-//	// (moĹźna uĹźyÄ mvaddch zamiast dwĂłch funcji)
-//	//move(position_y, position_x); // skaczemy kursorem do danej pozycji
-//	//addch(character); // drukujemy podany znak
-//	move(apple_y,apple_x);
-//	addch(apple);
-//	for(int i=0; i < length; i++) {
-//
-//		move(position_y[i],position_x[i]);
-//		addch(character);
-//		//move(position_y[i],position_x[i]+1);
-//		//addch(character);
-//	}
-//
-//	move(0, 0); // aby migajÄcy kursor nam nie przeszkadzaĹfsdfsdfsadfsda
-//	attroff(COLOR_PAIR(1)); // przywracamy domyĹlny kolor
-//
-//	refresh(); // wyĹwietlamy zawartoĹÄ wirtualnego ekranu dopiero po refresh
-//}
+
 int letter(int character) {
 
 	switch(character) {
@@ -185,21 +170,12 @@ int letter(int character) {
 	}
 	return character;
 }
-int apple(int apple_x, int apple_y, int snake_x, int snake_y) {
-	if(apple_x == snake_x && apple_y == snake_y) {
+int apple(Coord apple, Coord snakeHead) {
+	if(apple.x == snakeHead.x && apple.y == snakeHead.y) {
 		return true;
 	}
 
 	return false;
-}
-
-std::vector<int> snake_vektor(std::vector<int> position, int length) {
-
-	for(int i = 1; i < length; i++ ) {
-		position[i-1] = position[i];
-	}
-
-	return position;
 }
 
 int main(void) {
@@ -209,7 +185,7 @@ int main(void) {
 	//WINDOW * mainwin = initscr();
 	initscr();
 	MainWindow mainwin = MainWindow();
-	Snake snake;
+	//Snake snake;
 
 	ncurses_config();
 
@@ -218,6 +194,7 @@ int main(void) {
 	int last_character = 'S';
 	int last_position_x = 15;
 	int last_position_y = 15;
+	Coord pos(last_position_x, last_position_y);
 
 	int upper_limit = 0;
 	int bottom_limit = 25;
@@ -226,19 +203,16 @@ int main(void) {
 	int przegrana = false;
 
 	mainwin.window(bottom_limit, right_limit, upper_limit,left_limit);
-
-	std::vector<int> snake_x;
-	std::vector<int> snake_y;
-	snake_x.push_back(last_position_x,last_position_y+1);
-	snake_x.push_back(last_position_x,last_position_y);
-
-
-	snake= (last_position_x,last_position_y+1);
+	Coord snake_vektor(last_position_x,last_position_y+1);
+	Snake snake(snake_vektor);
 	snake.push(last_position_x,last_position_y);
 
 	//int length  = 1;
-	int apple_x = 20;
-	int apple_y = 2;
+	Coord apple1(20,2);
+//	apple.x = 20;
+//	apple.y = 2;
+
+	
 	int apple_character = '@';
 	int temporary = '*';
 
@@ -247,100 +221,49 @@ int main(void) {
 		// sczytujemy literkÄ z klawiatury
 		// (jeĹli sÄ tu znaki specjalne musi byÄ int bo nie zmieszczÄ siÄ w char)
 		wclear(mainwin.mainwin);
-		mainwin.print();
+		//mainwin.print();
+		pos.x=last_position_x;
+		pos.y=last_position_y;
+		mainwin.print_board(snake.vektors(), temporary, snake.size(), apple_character, apple1);
 
 		int input = getch();
 		if(input != ERR) {
 			switch(input) {
 				case KEY_UP:
-					if(apple(apple_x,apple_y,last_position_x,last_position_y) ==true) {
-
-						snake_y.insert(snake_y.begin(),snake_y[0]+1);
-						snake_x.insert(snake_x.begin(),snake_x[0]);
-
+					if(apple(apple1, pos) ==true) {
 						mainwin.addScore();
-
 						snake.push(last_position_x, last_position_y+1);
-
-
 					}
-					snake_x = snake_vektor(snake_x, snake_x.size());
-					snake_y = snake_vektor(snake_y, snake_y.size());
-
 					--last_position_y;
-
-					snake_y[snake_y.size()-1] = last_position_y;
-					snake_x[snake_x.size()-1] = last_position_x;
-					
-					
-
-
-
+					snake.moveVector();
+					snake.moveHead(Coord(last_position_x,last_position_y));
 					break;
 				case KEY_DOWN:
-					if(apple(apple_x,apple_y,last_position_x,last_position_y) ==true) {
-
-						snake_y.insert(snake_y.begin(),snake_y[0]-1);
-						snake_x.insert(snake_x.begin(),snake_x[0]);
-
+					if(apple(apple1,pos) ==true) {
 						mainwin.addScore();
-
 						snake.push(last_position_x, last_position_y-1);
-
-
 					}
-					snake_x = snake_vektor(snake_x, snake_x.size());
-					snake_y = snake_vektor(snake_y, snake_y.size());
 					++last_position_y;
-					snake_y[snake_y.size()-1] = last_position_y;
-					snake_x[snake_x.size()-1] = last_position_x;
-
 					snake.moveVector();
-					snake.moveHead(last_position_x,last_position_y);
-
-
+					snake.moveHead(Coord(last_position_x,last_position_y));
 					break;
 				case KEY_LEFT:
-					if(apple(apple_x,apple_y,last_position_x,last_position_y) ==true) {
-
-						snake_y.insert(snake_y.begin(),snake_y[0]);
-						snake_x.insert(snake_x.begin(),snake_x[0]+1);
-
+					if(apple(apple1,pos) ==true) {
 						mainwin.addScore();
-
 						snake.push(last_position_x+1, last_position_y);
-
-
 					}
-					snake_x = snake_vektor(snake_x, snake_x.size());
-					snake_y = snake_vektor(snake_y, snake_y.size());
-
 					--last_position_x;
-					snake_y[snake_y.size()-1] = last_position_y;
-					snake_x[snake_x.size()-1] = last_position_x;
+					snake.moveVector();
+					snake.moveHead(Coord(last_position_x,last_position_y));
 					break;
 				case KEY_RIGHT:
-					if(apple(apple_x,apple_y,last_position_x,last_position_y) ==true) {
-
-						snake_y.insert(snake_y.begin(),snake_y[0]);
-						snake_x.insert(snake_x.begin(),snake_x[0]-1);
-
+					if(apple(apple1,pos) ==true) {
 						mainwin.addScore();
-
-						snake.push(last_position_x-1, last_position_y);
-
-
+						snake.push(last_position_x,last_position_y);
 					}
-					snake_x = snake_vektor(snake_x, snake_x.size());
-					snake_y = snake_vektor(snake_y, snake_y.size());
-
 					++last_position_x;
-					snake_y[snake_y.size()-1] = last_position_y;
-					snake_x[snake_x.size()-1] = last_position_x;
-					
 					snake.moveVector();
-					snake.moveHead(last_position_x,last_position_y);
-					
+					snake.moveHead(Coord(last_position_x,last_position_y));
 					break;
 				default:
 					break;
@@ -367,7 +290,7 @@ int main(void) {
 
 
 
-		mainwin.print_board(snake_y, snake_x, temporary, snake_x.size(), apple_character, apple_x, apple_y);
+		//mainwin.print_board(snake_y, snake_x, temporary, snake_x.size(), apple_character, apple_x, apple_y);
 
 		if(przegrana) {
 			break;
