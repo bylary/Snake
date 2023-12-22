@@ -308,3 +308,313 @@ int main(void) {
 	refresh();
 	return EXIT_SUCCESS;
 }
+#include <iostream>
+#include <ncursesw/curses.h>
+#include <vector>
+#include <string>
+
+
+
+
+void ncurses_init_colors() {
+	// wiÄcej o kolorach tu https://www.linuxjournal.com/content/programming-color-ncurses
+
+	// musimy ustawiÄ jeĹli bÄdziemy uĹźywaÄ kolorowania konsoli
+	start_color();
+	// i zdefiniowaÄ pary kolorĂłw ktĂłre bÄdziemy uĹźywaÄ
+	init_pair(1, COLOR_GREEN, COLOR_BLACK);
+}
+
+void ncurses_config() {
+	// definiujemy kolory tekstu ktĂłre uĹźyjemy do kolorowania planszy
+	ncurses_init_colors();
+	// getch ma interpretowaÄ znaki specjalne takie jak KEY_UP
+	keypad(stdscr, TRUE);
+	// ustawiamy timeout dla getch (milisekundy)
+	// po tym czasie program przejdzie dalej nawet jeĹli nie podasz klawisza
+	timeout(5000);
+	// podczas wpisywania z klawiatury nie powinna siÄ drukowaÄ literka
+	noecho();
+}
+struct Coord {
+	int x,y;
+	Coord(int a=0,int b=0):x(a),y(b) {
+	}
+	void incX(){
+	++x;
+	}
+};
+class MainWindow {
+	private:
+		int wXR;
+		int wYB;
+		int wYU;
+		int wXL;
+		int score = 1;
+	public:
+		WINDOW * mainwin;
+
+		void window(int yB, int xR, int yU, int xL) {
+			wXR = xR;
+			wYB = yB;
+			wYU = yU;
+			wXL = xL;
+		}
+		void ncurses_init_colors() {
+			// wiÄcej o kolorach tu https://www.linuxjournal.com/content/programming-color-ncurses
+
+			// musimy ustawiÄ jeĹli bÄdziemy uĹźywaÄ kolorowania konsoli
+			start_color();
+			// i zdefiniowaÄ pary kolorĂłw ktĂłre bÄdziemy uĹźywaÄ
+			init_pair(1, COLOR_GREEN, COLOR_BLACK);
+		}
+
+		void addScore() {
+			score +=1;
+		}
+		void print_board(std::vector<Coord> position, int character, int length, int appleSkin, Coord apple) {
+			mainwin = newwin(wYB,wXR,wYU,wXL);
+//			int apple_y = apple.y;
+//			int apple_x = apple.x;
+
+
+			for(int h=0; h<wYB-1; h++) {
+				mvwprintw(mainwin, h, 0,"#");
+				mvwprintw(mainwin, h, wXR-1,"#");
+
+			}
+
+			for(int w=0; w<wXR; w++) {
+				mvwprintw(mainwin, 0, w,"#");
+				mvwprintw(mainwin, wYB-1, w,"#");
+			}
+
+
+
+			char const* pchar = std::to_string(score).c_str();
+
+			mvwprintw(mainwin, 0, 1,"SNAKE");
+			mvwprintw(mainwin, 0, 7,"SCORE:");
+			mvwprintw(mainwin, 0, 13, pchar);
+			
+			// operujemy na wirtualnym ekranie bÄdÄcym buforem ekranu
+			// a nastÄpnie wyĹwietlamy bufor w terminalu funkcjÄ refresh
+
+			//clear(); // czyĹci wirtualny ekran (lepiej byĹo by czyĹciÄ jeden znak albo jedna linie)
+
+			attron(COLOR_PAIR(1)); // ustawiamy wczeĹniej zdefiniowanÄ perÄ kolorĂłw
+			// (moĹźna uĹźyÄ mvaddch zamiast dwĂłch funcji)
+			//move(position_y, position_x); // skaczemy kursorem do danej pozycji
+			//addch(character); // drukujemy podany znak
+//	movew(mainwin,apple_y,apple_x);
+//	addch(apple);
+			mvwaddch(mainwin,apple.y,apple.x, appleSkin);
+			for(int i=0; i < length; i++) {
+				mvwaddch(mainwin,position[i].y,position[i].x,character);
+			}
+
+			move(0, 0); // aby migajÄcy kursor nam nie przeszkadzaĹfsdfsdfsadfsda
+			attroff(COLOR_PAIR(1)); // przywracamy domyĹlny kolor
+
+			//refresh(); // wyĹwietlamy zawartoĹÄ wirtualnego ekranu dopiero po refresh
+		}
+};
+
+class Snake {
+
+	private:
+		std::vector<Coord> snake;
+
+	public:
+		Snake(Coord vektor) {
+			push(vektor);
+		}
+		void push(Coord c) {
+			snake.push_back(c);
+
+		}
+		void moveVector() {
+			int length = snake.size()-1;
+			std::vector<Coord> tempSnake = snake;
+			for(int i = 0; i < length-1; i++ ) {
+				snake[length-i] = tempSnake[length-i-1];
+			}
+			//delete tempSnake;
+		}
+		void moveHead(Coord C) {
+//			delete
+			snake[0] = C;
+
+		}
+		int size() {
+			return snake.size();
+		}
+		std::vector<Coord> vektors() {
+			return snake;
+		}
+
+};
+
+int letter(int character) {
+
+	switch(character) {
+		case 'S':
+			return 'N';
+		case 'N':
+			return 'A';
+		case 'A':
+			return 'K';
+		case 'K':
+			return 'E';
+		case 'E':
+			return 'S';
+		default:
+			break;
+	}
+	return character;
+}
+int apple(Coord apple, Coord snakeHead) {
+	if(apple.x == snakeHead.x && apple.y == snakeHead.y) {
+		return true;
+	}
+
+	return false;
+}
+
+int main(void) {
+
+	std::cout<<"\e[8;45;80t";
+	// inicjalizacja ncurses//
+	//WINDOW * mainwin = initscr();
+	initscr();
+	MainWindow mainwin = MainWindow();
+//	Snake snake;
+
+	ncurses_config();
+
+
+
+	int last_character = 'S';
+	int last_position_x = 15;
+	int last_position_y = 15;
+	Coord pos(last_position_x, last_position_y);
+
+	int upper_limit = 0;
+	int bottom_limit = 25;
+	int left_limit = 0;
+	int right_limit = 50;
+	int przegrana = false;
+
+	mainwin.window(bottom_limit, right_limit, upper_limit,left_limit);
+	Coord snake_vektor(last_position_x,last_position_y+1);
+
+	Snake snake(snake_vektor);
+	snake.push(Coord(last_position_x,last_position_y));
+
+	//int length  = 1;
+	Coord apple1(20,2);
+//	apple.x = 20;
+//	apple.y = 2;
+
+
+	int apple_character = '@';
+	int temporary = '*';
+
+	while(1==1) {
+
+		// sczytujemy literkÄ z klawiatury
+		// (jeĹli sÄ tu znaki specjalne musi byÄ int bo nie zmieszczÄ siÄ w char)
+		wclear(mainwin.mainwin);
+		//mainwin.print();
+		
+		pos=Coord(last_position_x,last_position_y);
+		
+		//mainwin.print_board(snake.vektors(), temporary, snake.size(), apple_character, apple1);
+
+		int input = getch();
+		if(input != ERR) {
+			switch(input) {
+				case KEY_UP:
+					if(apple(apple1, pos) ==true) {
+						mainwin.addScore();
+						pos.y++;
+						snake.push(pos);
+					}
+					--pos.y;
+					snake.moveVector();
+					snake.moveHead(pos);
+					break;
+				case KEY_DOWN:
+					if(apple(apple1,pos) ==true) {
+						mainwin.addScore();
+						pos.y--;
+						snake.push(pos);
+					}
+					++last_position_y;
+					snake.moveVector();
+					snake.moveHead(pos);
+					break;
+				case KEY_LEFT:
+					if(apple(apple1,pos) ==true) {
+						mainwin.addScore();
+						pos.x++;
+						snake.push(pos);
+					}
+					--pos.x;
+					snake.moveVector();
+					snake.moveHead(pos);
+					break;
+				case KEY_RIGHT:
+					if(apple(apple1,pos) ==true) {
+						mainwin.addScore();
+						pos.x--;
+						snake.push(pos);
+					}
+					++pos.x;
+					snake.moveVector();
+					snake.moveHead(pos);
+					break;
+				default:
+					break;
+			}
+
+		}
+
+		if(last_position_x < left_limit+1) {
+			last_position_x = right_limit-2;
+			//przegrana = true;
+		}
+		if(last_position_x > right_limit-2) {
+			last_position_x = left_limit+1;
+			//przegrana = true;
+		}
+		if(last_position_y < upper_limit+1) {
+			last_position_y = bottom_limit-2;
+			//przegrana = true;
+		}
+		if(last_position_y > bottom_limit-2) {
+			last_position_y = upper_limit+1;
+			//przegrana = true;
+		}
+
+
+
+		mainwin.print_board(snake.vektors(), temporary, snake.size(), apple_character, apple1);
+
+		if(przegrana) {
+			break;
+		}
+		//printw(std::to_string(snake_vektor.x).c_str());
+		wrefresh(mainwin.mainwin);
+
+
+
+	}
+
+
+	// zakaĹczamy prace ncurses
+	delwin(mainwin.mainwin);
+	endwin();
+	refresh();
+	return EXIT_SUCCESS;
+}
