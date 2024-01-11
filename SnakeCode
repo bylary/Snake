@@ -1,0 +1,324 @@
+#include <iostream>
+#include <ncursesw/curses.h>
+#include <vector>
+#include <string>
+#include <cstdlib>
+
+
+struct Coord {
+	int x,y;
+	Coord(int a=0,int b=0):x(a),y(b) {
+	}
+	void incX() {
+		x+=2;
+	}
+	void incY() {
+		y++;
+	}
+	void decX() {
+		x-=2;
+	}
+	void decY() {
+		y--;
+	}
+	void workingCondition() {
+		if(!(this->x%2)) {
+			x++;
+		}
+	}
+};
+struct Frame {
+	int upper_limit,bottom_limit,left_limit,right_limit;
+	Frame(int a, int b, int c, int d):upper_limit(a),bottom_limit(b),left_limit(c),right_limit(d) {
+	}
+	void check(Coord& pos) {
+		pos.workingCondition();
+		if(pos.x < left_limit+1) {
+			pos.x = right_limit-3;
+			check(pos);
+		}
+		if(pos.x > right_limit-2) {
+			pos.x = left_limit+1;
+			check(pos);
+		}
+		if(pos.y < upper_limit+1) {
+			pos.y = bottom_limit-2;
+		}
+		if(pos.y > bottom_limit-2) {
+			pos.y = upper_limit+1;
+		}
+	}
+};
+class MainWindow {
+	private:
+		int wXR;
+		int wYB;
+		int wYU;
+		int wXL;
+		int score = 0;
+	public:
+		WINDOW * mainwin;
+		void window(int yB, int xR, int yU, int xL) {
+			wXR = xR; //window X Riht
+			wYB = yB; //window Y Bottom
+			wYU = yU; //window Y Upper
+			wXL = xL; //window X Left
+		}
+		void setScore(int scoreGiven){
+			score=scoreGiven;
+		}
+		void addScore() {
+			score +=1;
+		}
+		int getScore() {
+			return score;
+		}
+		void print_board(std::vector<Coord> position, Coord apple) {
+			mainwin = newwin(wYB,wXR,wYU,wXL);
+			move(0, 0);
+			for(int h=0; h<wYB; h++) {
+				for(int w=0; w<wXR; w++) {
+					if(h==0||w==0) {
+						mvwaddch(mainwin, h, w,'#'| COLOR_PAIR(2));
+						continue;
+					}
+					if(h==wYB-1||w==wXR-1) {
+						mvwaddch(mainwin, h, w,'#'| COLOR_PAIR(2));
+						continue;
+					}
+					mvwaddch(mainwin, h, w,'#'| COLOR_PAIR(5));
+				}
+			}
+			char const* pchar = std::to_string(score).c_str();
+			char snake[5]= {'S','N','A','K','E'};
+			char score[5]= {'S','C','O','R','E'};
+			for(int i=0; i<5; i++) {
+				mvwaddch(mainwin, wYU, wXL+1+i,char(snake[i])| COLOR_PAIR(4));
+				mvwaddch(mainwin, wYU, wXL+7+i,char(score[i])| COLOR_PAIR(4));
+			}
+			mvwaddch(mainwin, wYU, wXL+6,' '| COLOR_PAIR(4));
+			mvwaddch(mainwin, wYU, wXL+12,':'| COLOR_PAIR(4));
+			mvwprintw(mainwin, wYU, wXL+13, pchar);
+			mvwaddch(mainwin,apple.y,apple.x, '$'| COLOR_PAIR(3));
+			mvwaddch(mainwin,apple.y,apple.x+1, '$'| COLOR_PAIR(3));
+			for(int i=0; i < position.size(); i++) {
+				mvwaddch(mainwin,position[i].y,position[i].x,'*'| COLOR_PAIR(1));
+				mvwaddch(mainwin,position[i].y,position[i].x+1,'*'| COLOR_PAIR(1));
+			}
+			refresh();
+		}
+};
+class Snake {
+	private:
+		std::vector<Coord> snake;
+		std::string direction = "up";
+		Coord pos;
+	public:
+		Snake(Coord vektor, std::string moveDirection, Coord position) {
+			direction=moveDirection;
+			pos=vektor;
+			eat();
+			pos=position;
+		}
+		void eat() { // push apple
+			snake.push_back(pos);
+		}
+		void moveSnake() {
+			snake.pop_back();
+			snake.insert(snake.begin(),pos);
+		}
+		int size() {
+			return snake.size();
+		}
+		std::vector<Coord> vektors() {
+			return snake;
+		}
+		Coord GetPos() {
+			return pos;
+		}
+		void changeDirection(std::string newDir) {
+			direction=newDir;
+		}
+		int duplicate(Coord examined,int isSnake=2,int immortality=false) {
+			if(immortality) {
+				return false;
+			}
+			for(int i=isSnake; i<size(); i++) {
+				if(examined.x==snake[i].x && examined.y == snake[i].y) {
+					return true;
+				}
+			}
+			return false;
+		}
+		void currentMoving() {
+			if(direction=="up") {
+				pos.decY();
+			}
+			if(direction=="down") {
+				pos.incY();
+			}
+			if(direction=="left") {
+				pos.decX();
+			}
+			if(direction=="right") {
+				pos.incX();
+			}
+		}
+		void SnakeGrowingAdjuster() {
+			if(direction=="down") {
+				pos.decY();
+			}
+			if(direction=="up") {
+				pos.incY();
+			}
+			if(direction=="right") {
+				pos.decX();
+			}
+			if(direction=="left") {
+				pos.incX();
+			}
+		}
+		void checkLimits(Frame limits) {
+			limits.check(pos);
+		}
+};
+class Speed {
+	private:
+		int initialSpeed=50;
+		int velocity = 1;
+		int speed = initialSpeed;
+	public:
+		Speed(int speedGiven,int velocityGiven) {
+			initialSpeed=speedGiven;
+			velocity=velocityGiven;
+			speed=speedGiven;
+		}
+		int GetSpeed() {
+			return speed;
+		}
+		void adjustSpeed(int score) { 
+			speed=initialSpeed-(score*velocity);
+			if(speed<10) {
+				speed=10;
+			}
+		}
+};
+class Apple {
+		private:
+		Coord apple;
+		public:
+		Apple(Coord appleGiven) {
+			apple=appleGiven;
+		}
+		Coord GetApple(){
+			return apple;
+		}
+		int isAppleEaten(Coord snakeHead) {
+			if(apple.x == snakeHead.x && apple.y == snakeHead.y) {
+				return true;
+			}
+			return false;
+		}
+		Coord changeApple(Frame limits) {
+			apple.x = rand() % (limits.right_limit+1-limits.left_limit) + limits.left_limit;
+			apple.y = rand() % (limits.bottom_limit+1-limits.upper_limit) + limits.upper_limit;
+			limits.check(apple);
+			return apple;
+		}
+};
+void ncurses_init_colors() {
+	start_color();
+	init_pair(1,COLOR_GREEN, COLOR_GREEN);//snake
+	init_pair(2,COLOR_RED, COLOR_RED);//border
+	init_pair(3,COLOR_YELLOW, COLOR_YELLOW);//apple
+	init_pair(4,COLOR_GREEN, COLOR_BLUE);//text
+	init_pair(5,COLOR_BLUE, COLOR_BLUE);//background
+}
+void ncurses_config() {
+	ncurses_init_colors();
+	keypad(stdscr, TRUE);
+	timeout(5000);
+	curs_set(0);
+	noecho();
+}
+int main(void) {
+	initscr();
+	MainWindow mainwin = MainWindow();
+	ncurses_config();
+
+	int leftBorder = 0;
+	int rightBorder =25;
+	int upperBorder =0;
+	int bottomBorder =50;
+	Frame limits(leftBorder,rightBorder,upperBorder,bottomBorder);
+	mainwin.window(limits.bottom_limit,limits.right_limit,limits.upper_limit,limits.left_limit);
+
+	int initialSpeed=250;
+	int velocity = 1;
+	Speed speed(initialSpeed,velocity);
+	int finalScore = 0;
+	mainwin.setScore(finalScore);
+
+	int last_position_x = 15;
+	int last_position_y = 15;
+	Coord pos(last_position_x, last_position_y);
+	pos.workingCondition();
+
+	std::string latestMovement = "up";
+	Coord snake_vektor(last_position_x,last_position_y+1);
+	Snake snake(snake_vektor, latestMovement, pos);
+	snake.eat();
+	snake.SnakeGrowingAdjuster();
+	snake.eat();
+	snake.currentMoving();
+
+	Coord physicalApple(21,2);
+	physicalApple.workingCondition();
+	Apple apple(physicalApple);
+
+	int immortality = false; // daje niesmiertelnosc jesli potrzeba
+	std::string napisKoncowyDlaPrzegranego="totalna porazka";
+	while(1==1) {
+		int input = getch();
+		if(input != ERR) {
+			switch(input) {
+				case KEY_UP:
+					snake.changeDirection("up");
+					break;
+				case KEY_DOWN:
+					snake.changeDirection("down");
+					break;
+				case KEY_LEFT:
+					snake.changeDirection("left");
+					break;
+				case KEY_RIGHT:
+					snake.changeDirection("right");
+					break;
+				default:
+					break;
+			}
+		}
+		if(apple.isAppleEaten(snake.GetPos())) {
+			mainwin.addScore();
+			snake.SnakeGrowingAdjuster();
+			snake.eat();
+			snake.currentMoving();
+			while(snake.duplicate(apple.GetApple(),0)) {
+				apple.changeApple(limits);
+			}
+		}
+		mainwin.print_board(snake.vektors(), apple.GetApple());
+		finalScore=mainwin.getScore();
+		if(snake.duplicate(snake.GetPos(),2,immortality)) {
+			finalScore;
+			break;
+		}
+		snake.currentMoving();
+		snake.checkLimits(limits);
+		snake.moveSnake();
+		speed.adjustSpeed(finalScore);
+		timeout(speed.GetSpeed());
+		wrefresh(mainwin.mainwin);
+	}
+	std::cout<<napisKoncowyDlaPrzegranego <<" (score:" <<finalScore <<")";
+}
