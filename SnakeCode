@@ -253,7 +253,7 @@ int main(void) {
 	Frame limits(leftBorder,rightBorder,upperBorder,bottomBorder);
 	mainwin.window(limits.bottom_limit,limits.right_limit,limits.upper_limit,limits.left_limit);
 
-	int initialSpeed=250;
+	int initialSpeed=150;
 	int velocity = 1;
 	Speed speed(initialSpeed,velocity);
 	int finalScore = 0;
