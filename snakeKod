@@ -77,14 +77,14 @@ class MainWindow {
 			init_pair(4,COLOR_GREEN, COLOR_BLUE);//pisanie
 			init_pair(5,COLOR_BLUE, COLOR_BLUE);//background
 			move(0, 0);
-			//wbkgd(mainwin, COLOR_PAIR(5));
+			curs_set(0);
 			for(int h=0; h<wYB-1; h++) {
-				mvwaddch(mainwin, h, 0,'#'| COLOR_PAIR(2));
+				mvwaddch(mainwin, h, wXL,'#'| COLOR_PAIR(2));
 				mvwaddch(mainwin, h, wXR-1,'#'| COLOR_PAIR(2));//mvwprintw
 			}
 
 			for(int w=0; w<wXR; w++) {
-				mvwaddch(mainwin, 0, w,'#'| COLOR_PAIR(2));
+				mvwaddch(mainwin, wYU, w,'#'| COLOR_PAIR(2));
 				mvwaddch(mainwin, wYB-1, w,'#'| COLOR_PAIR(2));
 			}
 
@@ -235,23 +235,20 @@ int adjustFPS(int SPEED,int score,int initial,int multiplication) {
 int main(void) {
 
 	std::string napisKoncowyDlaPrzegranego="totalna porazka";
-
 	initscr();
 	MainWindow mainwin = MainWindow();
 	int finalScore = 0;
-
-
+	
 	ncurses_config();
-
-
+	
 	curs_set(0);
+	
 	int initialSpeed=50;
 	int decreaseSpeedMultiplication = 1;
 	int Speed = initialSpeed;
 
 	int last_position_x = 15;
 	int last_position_y = 15;
-
 	Coord pos(last_position_x, last_position_y);
 	workingCondition(pos);
 
@@ -260,12 +257,12 @@ int main(void) {
 	int upperBorder =0;
 	int bottomBorder =50;
 	Frame limits(leftBorder,rightBorder,upperBorder,bottomBorder);
-
 	mainwin.window(limits.bottom_limit,limits.right_limit,limits.upper_limit,limits.left_limit);
+	
+	
 	int przegrana = false;
 	std::string latestMovement = "up";
 	Coord snake_vektor(last_position_x,last_position_y+1);
-
 	Snake snake(snake_vektor);
 	snake.eat(Coord(last_position_x,last_position_y+1));
 	snake.eat(Coord(last_position_x,last_position_y+2));
@@ -273,12 +270,10 @@ int main(void) {
 
 	Coord physicalApple(21,2);
 	workingCondition(physicalApple);
-
-
 	int apple_character = '@';
-	int temporary = '*';
+	int skinSnake = '*';
 	while(1==1) {
-		//	wclear(mainwin.mainwin);
+			//clear();
 		int input = getch();
 		if(input != ERR) {
 			switch(input) {
@@ -311,7 +306,7 @@ int main(void) {
 
 
 
-		mainwin.print_board(snake.vektors(), temporary,  apple_character, physicalApple);
+		mainwin.print_board(snake.vektors(), skinSnake,  apple_character, physicalApple);
 
 
 		if(snake.duplicate(pos,2)) {
