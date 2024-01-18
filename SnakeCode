@@ -30,6 +30,7 @@ struct Coord {
 struct Frame {
 	int upper_limit,bottom_limit,left_limit,right_limit;
 	Frame(int a, int b, int c, int d):upper_limit(a),bottom_limit(b),left_limit(c),right_limit(d) {
+		right_limit+=(right_limit%2);
 	}
 	void check(Coord& pos) {
 		pos.workingCondition();
@@ -76,9 +77,9 @@ class MainWindow {
 		void print_board(std::vector<Coord> position, Coord apple) {
 			mainwin = newwin(wYB,wXR,wYU,wXL);
 			move(0, 0);
-			for(int h=0; h<wYB; h++) {
-				for(int w=0; w<wXR; w++) {
-					if(h==0||w==0) {
+			for(int h=wYU; h<wYB; h++) {
+				for(int w=wXL; w<wXR; w++) {
+					if(h==wYU||w==wXL) {
 						mvwaddch(mainwin, h, w,'#'| COLOR_PAIR(2));
 						continue;
 					}
@@ -247,10 +248,10 @@ int main(void) {
 	ncurses_config();
 
 	int leftBorder = 0;
-	int rightBorder =25;
+	int rightBorder =120;
 	int upperBorder =0;
-	int bottomBorder =50;
-	Frame limits(leftBorder,rightBorder,upperBorder,bottomBorder);
+	int bottomBorder =30;
+	Frame limits(upperBorder,bottomBorder,leftBorder,rightBorder);
 	mainwin.window(limits.bottom_limit,limits.right_limit,limits.upper_limit,limits.left_limit);
 
 	int initialSpeed=150;
@@ -275,9 +276,10 @@ int main(void) {
 	Coord physicalApple(21,2);
 	physicalApple.workingCondition();
 	Apple apple(physicalApple);
+	int max=(rightBorder-leftBorder-2)*(bottomBorder-upperBorder-2);
 
 	int immortality = false; // daje niesmiertelnosc jesli potrzeba
-	std::string napisKoncowyDlaPrzegranego="totalna porazka";
+	std::string napisKoncowyDlaPrzegranegoLubWygranego="totalna porazka";
 	while(1==1) {
 		int input = getch();
 		if(input != ERR) {
@@ -309,6 +311,10 @@ int main(void) {
 		}
 		mainwin.print_board(snake.vektors(), apple.GetApple());
 		finalScore=mainwin.getScore();
+		if(finalScore>=max){
+			napisKoncowyDlaPrzegranegoLubWygranego="totalne zwyciestwo";
+			break;
+		}
 		if(snake.duplicate(snake.GetPos(),2,immortality)) {
 			finalScore;
 			break;
@@ -320,5 +326,5 @@ int main(void) {
 		timeout(speed.GetSpeed());
 		wrefresh(mainwin.mainwin);
 	}
-	std::cout<<napisKoncowyDlaPrzegranego <<" (score:" <<finalScore <<")";
+	std::cout<<napisKoncowyDlaPrzegranegoLubWygranego <<" (score:" <<finalScore <<")";
 }
