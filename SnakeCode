@@ -276,7 +276,7 @@ int main(void) {
 	Coord physicalApple(21,2);
 	physicalApple.workingCondition();
 	Apple apple(physicalApple);
-	int max=(rightBorder-leftBorder-2)*(bottomBorder-upperBorder-2);
+	int max=((rightBorder-leftBorder-2)/2)*(bottomBorder-upperBorder-2);
 
 	int immortality = false; // daje niesmiertelnosc jesli potrzeba
 	std::string napisKoncowyDlaPrzegranegoLubWygranego="totalna porazka";
